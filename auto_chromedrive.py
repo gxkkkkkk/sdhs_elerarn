@@ -13,7 +13,8 @@ version_re = re.compile(r'^[1-9]\d*\.\d*.\d*')  # 匹配前3位版本号的正�
 def getChromeVersion():
     """通过注册表查询chrome版本"""
     try:
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Software\\Google\\Chrome\\BLBeacon')
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                             'Software\\Google\\Chrome\\BLBeacon')
         value, t = winreg.QueryValueEx(key, 'version')
         return version_re.findall(value)[0]  # 返回前3位版本号
     except WindowsError as e:
@@ -50,15 +51,15 @@ def getLatestChromeDriver(version):
         f.extract(file)
     print("解压完成.")
 
+
 def getLocalversion():
     """直接查询指定位置的chrome版本"""
-    allInfo=Dispatch("Scripting.FileSystemObject")
-    all_version = allInfo.GetFileVersion(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+    allInfo = Dispatch("Scripting.FileSystemObject")
+    all_version = allInfo.GetFileVersion(
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe")
     version_split = all_version.split('.')
     version_return = '.'.join(version_split[:3])
     return version_return
-
-
 
 
 def checkChromeDriverUpdate():
@@ -82,4 +83,3 @@ def checkChromeDriverUpdate():
 
 if __name__ == "__main__":
     checkChromeDriverUpdate()
-
