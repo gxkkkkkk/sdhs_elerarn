@@ -41,12 +41,14 @@ def LearnCourse(driver):
             course_object = course[1]
             course_name = course_object.text.split('\n')[0]
             course_num = course[0]
-            Xpath_name = '//*[@id="SearchCatalog_Template_divTemplateHtmlContents"]/div/div[2]/div[3]/ul[2]/li[' + str(course_num + 1) + ']/div[1]'
+            Xpath_name = '//*[@id="SearchCatalog_Template_divTemplateHtmlContents"]/div/div[2]/div[3]/ul[2]/li[' + str(
+                course_num + 1) + ']/div[1]'
             learn_state = course_object.find_element(By.XPATH, Xpath_name).text
             learn_verification = False
             if learn_state != '已完成':
                 Xpath_parent = Xpath_name + '/..'  # 父元素的Xpath
-                click_object = course_object.find_element(By.XPATH, Xpath_parent)
+                click_object = course_object.find_element(
+                    By.XPATH, Xpath_parent)
                 click_object.click()  # 点开课程包
                 window_handles = driver.window_handles
                 driver.switch_to.window(window_handles[-1])
@@ -73,7 +75,6 @@ def LearnCourse(driver):
             break
 
 
-
 def auto_login(web_address, driver):
     """登录流程"""
     # 环境配置
@@ -85,8 +86,10 @@ def auto_login(web_address, driver):
         account_password = input('请输入密码:')
         user_name = input('请输入用户名(自定义):')
         learn_time_input = int(input('请输入学习时长(单位:s):'))
-        accountdata_generate = [[account_name, account_password, user_name, learn_time_input]]
-        accountframe_generate = pd.DataFrame(accountdata_generate, columns=['账号', '密码', '用户', '学习时长'])
+        accountdata_generate = [
+            [account_name, account_password, user_name, learn_time_input]]
+        accountframe_generate = pd.DataFrame(
+            accountdata_generate, columns=['账号', '密码', '用户', '学习时长'])
         accountframe_generate.to_csv('accountfile.csv', index=0)
     filepath = './accountfile.csv'  # 存储账号密码文件
     account_data = pd.read_csv(filepath)  # 读取账号密码
@@ -138,7 +141,8 @@ def learn_continue(driver, start_time, learn_time):
         except NoSuchElementException:
             pass
         try:
-            learn_button2 = driver.find_element(By.XPATH, '//*[@id="dvHeartTip"]/input[2]')
+            learn_button2 = driver.find_element(
+                By.XPATH, '//*[@id="dvHeartTip"]/input[2]')
             learn_button2.click()
         except NoSuchElementException:
             pass
@@ -159,7 +163,8 @@ def learn_continue(driver, start_time, learn_time):
         except NoSuchElementException:
             pass
         try:  # 判断播放是否中断，出现加载对象
-            refresh_element = driver.find_element(By.CSS_SELECTOR, '.jw-icon.jw-icon-display.jw-button-color.jw-reset')
+            refresh_element = driver.find_element(
+                By.CSS_SELECTOR, '.jw-icon.jw-icon-display.jw-button-color.jw-reset')
             refresh_element.click()
         except ElementNotInteractableException:
             pass
@@ -185,7 +190,8 @@ if __name__ == '__main__':
     option = webdriver.ChromeOptions()
     # option.add_argument('headless')  # 隐藏浏览器
     option.add_argument("--mute-audio")  # 静音
-    option.add_experimental_option('excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息
+    option.add_experimental_option(
+        'excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息
     driver_name = webdriver.Chrome(chrome_options=option)  # 选择Chrome浏览器
     # 登录课程资源网站
     source_website = 'http://u.sdhsg.com/kng/knowledgecatalogsearch.htm?sf=UploadDate&s=ac&st=null&mode='
