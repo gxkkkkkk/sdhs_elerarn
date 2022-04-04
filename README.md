@@ -1,37 +1,16 @@
 # sdhs_Elearn
 
 #### 介绍
-高速e学
 
-#### 软件架构
-软件架构说明
-
-
-#### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
+高速e学自动学习，需要结合Windows的计划任务程序使用。
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1. 下载安装chrome浏览器；
+2. 第一次使用需要按照命令行提示输入账号、密码、用户名（随便输）、学习时长，输入之后会生成记录文件，以后就不用再输入了；
+3. 后期想修改学习时长可在第2步中生成的*accountfile.csv中修改；*
+4. 配合Windows的任务计划程序可以每日自动执行。
 
-#### 参与贡献
+#### 已知错误
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+1. 开启代理会使chrome驱动程序无法更新，导致程序中断，可以关闭代理后重试。
