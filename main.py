@@ -84,13 +84,15 @@ def auto_login(web_address, driver):
         account_name = input('请输入账号:')
         account_password = input('请输入密码:')
         user_name = input('请输入用户名(自定义):')
-        accountdata_generate = [[account_name, account_password, user_name]]
-        accountframe_generate = pd.DataFrame(accountdata_generate, columns=['账号', '密码', '用户'])
+        learn_time_input = int(input('请输入学习时长(单位:s):'))
+        accountdata_generate = [[account_name, account_password, user_name, learn_time_input]]
+        accountframe_generate = pd.DataFrame(accountdata_generate, columns=['账号', '密码', '用户', '学习时长'])
         accountframe_generate.to_csv('accountfile.csv', index=0)
     filepath = './accountfile.csv'  # 存储账号密码文件
     account_data = pd.read_csv(filepath)  # 读取账号密码
     accountname = account_data.iloc[0][0]
     password = account_data.iloc[0][1]
+    learn_time = account_data.iloc[0][3]
     driver.get(web_address)  # 填单网站，未登录会显示登录
     # driver.maximize_window() #最大化谷歌浏览器
     # 处理alert弹窗
@@ -118,6 +120,7 @@ def auto_login(web_address, driver):
     if error_text == '请阅读并同意下方隐私协议':
         driver.find_element(By.ID, 'chkloginpass').click()  # 点击勾选同意协议
         driver.find_element_by_xpath('//*[@id="btnLogin2"]').click()  # 点击登录
+    return learn_time
 
 
 def learn_continue(driver, start_time, learn_time):
@@ -128,7 +131,7 @@ def learn_continue(driver, start_time, learn_time):
     time_learn_object = time_now - start_time
     time_learn_seconds = time_learn_object.seconds
     while time_learn_seconds < learn_time:
-        time.sleep(100)
+        time.sleep(100)  # 每隔100s处理一次弹窗
         try:  # 判断是否出现继续学习弹窗
             learn_button1 = driver.find_element(By.ID, "reStartStudy")
             learn_button1.click()
@@ -182,11 +185,11 @@ if __name__ == '__main__':
     option = webdriver.ChromeOptions()
     # option.add_argument('headless')  # 隐藏浏览器
     option.add_argument("--mute-audio")  # 静音
+    option.add_experimental_option('excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息
     driver_name = webdriver.Chrome(chrome_options=option)  # 选择Chrome浏览器
     # 登录课程资源网站
     source_website = 'http://u.sdhsg.com/kng/knowledgecatalogsearch.htm?sf=UploadDate&s=ac&st=null&mode='
-    learn_time = 300  # 设定学习时间，单位：s
-    auto_login(source_website, driver_name)
+    learn_time = auto_login(source_website, driver_name)
     start_time = datetime.now()
     learning_time = 0
     while learning_time < learn_time:
