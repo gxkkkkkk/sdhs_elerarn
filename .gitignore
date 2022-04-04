@@ -25,3 +25,5 @@ build/main/Analysis-00.toc
 __pycache__/main.cpython-37.pyc
 main.spec
 auto_icon.ico
+chromedriver.exe
+chromedriver.zip
