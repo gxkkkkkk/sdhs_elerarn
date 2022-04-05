@@ -1,11 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/envpython3
 # -*- coding: utf-8 -*-
 """规定编码"""
 # pylint: disable=C0103
 # pylint: disable=unused-variable, line-too-long, consider-using-enumerate
 import os
 import sys
-import re
 import traceback
 import time
 from datetime import datetime
@@ -13,9 +12,40 @@ import pandas as pd
 import win32api
 import win32con
 from selenium import webdriver
-from selenium.common.exceptions import NoAlertPresentException, NoSuchElementException, StaleElementReferenceException, ElementNotInteractableException
+from selenium.common.exceptions import NoAlertPresentException, NoSuchElementException, ElementNotInteractableException
 from selenium.webdriver.common.by import By
+import requests
+from PIL import Image
+import threading
 import auto_chromedrive as ac
+
+
+def cut_screen(driver):
+    """截图"""
+    open_windows = driver.window_handles  # 获取打开的多个窗口句柄
+    driver.switch_to.window(open_windows[-1])  # 切换到当前最新打开的窗口
+    screen_name = time.strftime("%Y-%m-%d-%H.%M.%S") + '.png'
+    driver.save_screenshot(screen_name)
+
+
+def img_shot(driver):
+    """保存考试二维码"""
+    img_url = driver.find_element(By.ID, 'img_divCode').get_attribute("src")
+    img_res = requests.get(img_url)
+    img_name = driver.find_element(By.ID, 'lblExamName').text + '.png'
+    img_file = open(img_name, 'wb')
+    img_file.write(img_res.content)
+    img_file.close
+    img = Image.open(img_name)
+    img.show()
+
+
+def img_threading(threading_name, arg_name):
+    """当打开图片时程序会暂停执行,利用子线程可以解决这个问题"""
+    img_thread = threading.Thread(target=threading_name, args=arg_name)
+    # img_thread.setDaemon(True)
+    img_thread.start()
+    time.sleep(2)  # 暂停等待子线程执行完毕
 
 
 def sign_in(driver):
@@ -25,7 +55,11 @@ def sign_in(driver):
     driver.get("http://u.sdhsg.com/sty/index.htm")
     open_windows = driver.window_handles  # 获取打开的多个窗口句柄
     driver.switch_to.window(open_windows[-1])  # 切换到当前最新打开的窗口
-    driver.find_element(By.ID, 'a_sign').click()
+    try:
+        driver.find_element(By.ID, 'a_sign').click()
+    except NoSuchElementException:
+        cut_screen(driver)
+        print('签到失败,已截图')
 
 
 def LearnCourse(driver):
@@ -58,6 +92,7 @@ def LearnCourse(driver):
                     try:  # 点开学习是考试的情况，关闭页面,继续往下遍历未学习课程
                         driver.find_element(By.ID, 'lblExamName')
                         print('课程 %s 考试未完成,遍历下一课程...' % course_name)
+                        img_threading(img_shot, {driver: driver})
                         driver.close()
                         window_handles = driver.window_handles
                         driver.switch_to.window(window_handles[-1])
@@ -97,7 +132,7 @@ def auto_login(web_address, driver):
     password = account_data.iloc[0][1]
     learn_time = account_data.iloc[0][3]
     driver.get(web_address)  # 填单网站，未登录会显示登录
-    # driver.maximize_window() #最大化谷歌浏览器
+    driver.maximize_window()  # 最大化谷歌浏览器
     # 处理alert弹窗
     try:
         alert1 = driver.switch_to.alert  # switch_to.alert点击确认alert
@@ -150,6 +185,7 @@ def learn_continue(driver, start_time, learn_time):
             test_page = driver.find_element(By.ID, 'lblExamName')
             test_name = test_page.text
             print('课程 %s 需要进行考试' % test_name)
+            img_threading(img_shot, {driver: driver})
             break
         except NoSuchElementException:
             pass
@@ -197,11 +233,16 @@ if __name__ == '__main__':
     source_website = 'http://u.sdhsg.com/kng/knowledgecatalogsearch.htm?sf=UploadDate&s=ac&st=null&mode='
     learn_time = auto_login(source_website, driver_name)
     start_time = datetime.now()
+    print('开始学习,当前时间: %s' % start_time)
+    print('学习时长: %ds' % learn_time)
+    print('学习中...')
     learning_time = 0
     while learning_time < learn_time:
         LearnCourse(driver_name)
         learning_time = learn_continue(driver_name, start_time, learn_time)
     sign_in(driver_name)
+    cut_screen(driver_name)
     driver_name.quit()
+    print('学习完成,当前时间: %s' % datetime.now())
     currenttime = time.strftime('%m.%d %H:%M:%S', time.localtime())
     win32api.MessageBox(0, currenttime + "学习签到完成", "提醒", win32con.MB_OK)

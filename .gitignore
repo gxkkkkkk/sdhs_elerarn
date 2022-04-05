@@ -27,3 +27,4 @@ main.spec
 auto_icon.ico
 chromedriver.exe
 chromedriver.zip
+*.png
