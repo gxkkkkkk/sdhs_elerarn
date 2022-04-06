@@ -45,7 +45,7 @@ def img_threading(threading_name, arg_name):
     img_thread = threading.Thread(target=threading_name, args=arg_name)
     # img_thread.setDaemon(True)
     img_thread.start()
-    time.sleep(2)  # 暂停等待子线程执行完毕
+    time.sleep(5)  # 暂停等待子线程执行完毕
 
 
 def sign_in(driver):
@@ -132,7 +132,7 @@ def auto_login(web_address, driver):
     password = account_data.iloc[0][1]
     learn_time = account_data.iloc[0][3]
     driver.get(web_address)  # 填单网站，未登录会显示登录
-    driver.maximize_window()  # 最大化谷歌浏览器
+    # driver.maximize_window()  # 最大化谷歌浏览器
     # 处理alert弹窗
     try:
         alert1 = driver.switch_to.alert  # switch_to.alert点击确认alert
@@ -224,7 +224,9 @@ if __name__ == '__main__':
     # 更新浏览器驱动
     ac.checkChromeDriverUpdate()
     option = webdriver.ChromeOptions()
-    # option.add_argument('headless')  # 隐藏浏览器
+    option.add_argument("--window-size=1366,768")
+    option.add_argument("--start-maximized")
+    option.add_argument('headless')  # 隐藏浏览器
     option.add_argument("--mute-audio")  # 静音
     option.add_experimental_option(
         'excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息

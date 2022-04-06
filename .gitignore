@@ -28,3 +28,5 @@ auto_icon.ico
 chromedriver.exe
 chromedriver.zip
 *.png
+__pycache__
+*.jpg
