@@ -45,7 +45,7 @@ def img_threading(threading_name, arg_name):
     img_thread = threading.Thread(target=threading_name, args=arg_name)
     # img_thread.setDaemon(True)
     img_thread.start()
-    time.sleep(2)  # 暂停等待子线程执行完毕
+    time.sleep(5)  # 暂停等待子线程执行完毕
 
 
 def sign_in(driver):
@@ -60,6 +60,69 @@ def sign_in(driver):
     except NoSuchElementException:
         cut_screen(driver)
         print('签到失败,已截图')
+
+
+def go_test(driver):
+    """答题,全选A或者正确,慎用!"""
+    driver.find_element(By.ID, 'btnTest').click()
+    buttons_all = driver.find_elements(By.CSS_SELECTOR, 'label.btn-check.mb10')
+    for button in buttons_all:
+        if ('A' in button.text) or ('正确' in button.text):
+            button.click()
+    driver.find_element(By.ID, 'spn_submitText').click()
+    driver.find_element(By.ID, 'btnMyConfirm').click()
+    time.sleep(5)
+
+
+def auto_login(web_address, driver):
+    """登录流程"""
+    # 环境配置
+    chromedriver = r'C:\Program Files (x86)\Google\Chrome\Application'
+    os.environ["webdriver.ie.driver"] = chromedriver
+    account_bool = os.path.exists('accountfile.csv')
+    if account_bool is False:
+        account_name = input('请输入账号:')
+        account_password = input('请输入密码:')
+        user_name = input('请输入用户名(自定义):')
+        learn_time_input = int(input('请输入学习时长(单位:s):'))
+        accountdata_generate = [
+            [account_name, account_password, user_name, learn_time_input]]
+        accountframe_generate = pd.DataFrame(
+            accountdata_generate, columns=['账号', '密码', '用户', '学习时长'])
+        accountframe_generate.to_csv('accountfile.csv', index=0)
+    filepath = './accountfile.csv'  # 存储账号密码文件
+    account_data = pd.read_csv(filepath)  # 读取账号密码
+    accountname = account_data.iloc[0][0]
+    password = account_data.iloc[0][1]
+    learn_time = account_data.iloc[0][3]
+    driver.get(web_address)  # 填单网站，未登录会显示登录
+    # driver.maximize_window()  # 最大化谷歌浏览器
+    # 处理alert弹窗
+    try:
+        alert1 = driver.switch_to.alert  # switch_to.alert点击确认alert
+    except NoAlertPresentException:
+        print("no alert")
+        traceback.print_exc()
+    else:
+        at_text1 = alert1.text
+        print("at_text:" + at_text1)
+    username = str(accountname)
+    password = str(password)
+    driver.implicitly_wait(1)  # 设置隐式等待
+    driver.find_element_by_id('txtUserName2').click()  # 点击用户名输入框
+    driver.find_element_by_id('txtUserName2').clear()  # 清空输入框
+    driver.find_element_by_id('txtUserName2').send_keys(username)  # 自动敲入用户名
+    driver.find_element_by_id('txtPassword2').click()  # 点击密码输入框
+    driver.find_element_by_id('txtPassword2').clear()  # 清空输入框
+    driver.find_element_by_id('txtPassword2').send_keys(password)  # 自动敲入密码
+    # 采用xpath定位登陆按钮
+    driver.find_element_by_xpath('//*[@id="btnLogin2"]').click()
+    error_element = driver.find_element(By.ID, 'lblErrMsg1')
+    error_text = error_element.text
+    if error_text == '请阅读并同意下方隐私协议':
+        driver.find_element(By.ID, 'chkloginpass').click()  # 点击勾选同意协议
+        driver.find_element_by_xpath('//*[@id="btnLogin2"]').click()  # 点击登录
+    return learn_time
 
 
 def LearnCourse(driver):
@@ -89,18 +152,24 @@ def LearnCourse(driver):
                 try:  # 点击开始学习
                     driver.find_element_by_css_selector(
                         "input#btnStartStudy").click()
-                    try:  # 点开学习是考试的情况，关闭页面,继续往下遍历未学习课程
+                    try:  # 点开学习是考试的情况
                         driver.find_element(By.ID, 'lblExamName')
-                        print('课程 %s 考试未完成,遍历下一课程...' % course_name)
-                        img_threading(img_shot, {driver: driver})
+                        print('课程 %s 开始考试...' % course_name)
+                        go_test(driver)  # 自动点击A和正确
+                        print('课程 %s 考试完成!' % course_name)
+                        # img_threading(img_shot, {driver: driver})  # 弹出考试二维码
                         driver.close()
-                        window_handles = driver.window_handles
-                        driver.switch_to.window(window_handles[-1])
-                        continue
+                        LearnCourse(driver)
                     except NoSuchElementException:
                         pass
-                except NoSuchElementException:  # 如没有二级页面则不用再次点击
-                    pass
+                except NoSuchElementException as e:  # 如没有二级页面则不用再次点击
+                    try:
+                        if driver.find_element(By.ID, 'lblStudySchedule').text == '100':
+                            LearnCourse(driver)
+                        else:
+                            raise e('没有正常进行学习,请检查程序!')
+                    except NoSuchElementException:
+                        pass
                 learn_verification = True
                 print('开始学习: %s' % course_name)
                 return None  # 跳出遍历
@@ -108,57 +177,6 @@ def LearnCourse(driver):
             driver.find_element(By.LINK_TEXT, '下一页').click()
         if learn_verification is True:
             break
-
-
-def auto_login(web_address, driver):
-    """登录流程"""
-    # 环境配置
-    chromedriver = r'C:\Program Files (x86)\Google\Chrome\Application'
-    os.environ["webdriver.ie.driver"] = chromedriver
-    account_bool = os.path.exists('accountfile.csv')
-    if account_bool is False:
-        account_name = input('请输入账号:')
-        account_password = input('请输入密码:')
-        user_name = input('请输入用户名(自定义):')
-        learn_time_input = int(input('请输入学习时长(单位:s):'))
-        accountdata_generate = [
-            [account_name, account_password, user_name, learn_time_input]]
-        accountframe_generate = pd.DataFrame(
-            accountdata_generate, columns=['账号', '密码', '用户', '学习时长'])
-        accountframe_generate.to_csv('accountfile.csv', index=0)
-    filepath = './accountfile.csv'  # 存储账号密码文件
-    account_data = pd.read_csv(filepath)  # 读取账号密码
-    accountname = account_data.iloc[0][0]
-    password = account_data.iloc[0][1]
-    learn_time = account_data.iloc[0][3]
-    driver.get(web_address)  # 填单网站，未登录会显示登录
-    driver.maximize_window()  # 最大化谷歌浏览器
-    # 处理alert弹窗
-    try:
-        alert1 = driver.switch_to.alert  # switch_to.alert点击确认alert
-    except NoAlertPresentException:
-        print("no alert")
-        traceback.print_exc()
-    else:
-        at_text1 = alert1.text
-        print("at_text:" + at_text1)
-    username = str(accountname)
-    password = str(password)
-    driver.implicitly_wait(1)  # 设置隐式等待
-    driver.find_element_by_id('txtUserName2').click()  # 点击用户名输入框
-    driver.find_element_by_id('txtUserName2').clear()  # 清空输入框
-    driver.find_element_by_id('txtUserName2').send_keys(username)  # 自动敲入用户名
-    driver.find_element_by_id('txtPassword2').click()  # 点击密码输入框
-    driver.find_element_by_id('txtPassword2').clear()  # 清空输入框
-    driver.find_element_by_id('txtPassword2').send_keys(password)  # 自动敲入密码
-    # 采用xpath定位登陆按钮
-    driver.find_element_by_xpath('//*[@id="btnLogin2"]').click()
-    error_element = driver.find_element(By.ID, 'lblErrMsg1')
-    error_text = error_element.text
-    if error_text == '请阅读并同意下方隐私协议':
-        driver.find_element(By.ID, 'chkloginpass').click()  # 点击勾选同意协议
-        driver.find_element_by_xpath('//*[@id="btnLogin2"]').click()  # 点击登录
-    return learn_time
 
 
 def learn_continue(driver, start_time, learn_time):
@@ -184,8 +202,10 @@ def learn_continue(driver, start_time, learn_time):
         try:  # 判断是否跳转到考试页
             test_page = driver.find_element(By.ID, 'lblExamName')
             test_name = test_page.text
-            print('课程 %s 需要进行考试' % test_name)
-            img_threading(img_shot, {driver: driver})
+            print('课程 %s 开始考试...' % test_name)
+            go_test(driver)  # 自动选择A和正确
+            print('课程 %s 考试完成!' % test_name)
+            # img_threading(img_shot, {driver: driver})  # 弹出考试二维码
             break
         except NoSuchElementException:
             pass
@@ -224,6 +244,8 @@ if __name__ == '__main__':
     # 更新浏览器驱动
     ac.checkChromeDriverUpdate()
     option = webdriver.ChromeOptions()
+    option.add_argument("--window-size=1366,768")
+    option.add_argument("--start-maximized")
     # option.add_argument('headless')  # 隐藏浏览器
     option.add_argument("--mute-audio")  # 静音
     option.add_experimental_option(
