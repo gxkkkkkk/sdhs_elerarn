@@ -1,4 +1,4 @@
-.vscode/launch.json
+vsod/lunh.so
 test.py
 aaa.csv
 accountfile.csv
@@ -30,3 +30,4 @@ chromedriver.zip
 *.png
 __pycache__
 *.jpg
+.vscode
