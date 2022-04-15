@@ -62,52 +62,16 @@ def sign_in(driver):
         print('签到失败,已截图')
 
 
-def LearnCourse(driver):
-    """从课程资源开始学习"""
-    open_windows = driver.window_handles  # 获取打开的多个窗口句柄
-    driver.switch_to.window(open_windows[-1])  # 切换到当前最新打开的窗口
-    driver.refresh()  # 刷新页面，防止循环学习时‘已完成’标签不刷新
-    time.sleep(1)  # 防止下面一句代码找不到elements
-    while True:
-        learn_courses = driver.find_elements(
-            By.CLASS_NAME, 'el-kng-bottom-detail')
-        for course in enumerate(learn_courses):
-            course_object = course[1]
-            course_name = course_object.text.split('\n')[0]
-            course_num = course[0]
-            Xpath_name = '//*[@id="SearchCatalog_Template_divTemplateHtmlContents"]/div/div[2]/div[3]/ul[2]/li[' + str(
-                course_num + 1) + ']/div[1]'
-            learn_state = course_object.find_element(By.XPATH, Xpath_name).text
-            learn_verification = False
-            if learn_state != '已完成':
-                Xpath_parent = Xpath_name + '/..'  # 父元素的Xpath
-                click_object = course_object.find_element(
-                    By.XPATH, Xpath_parent)
-                click_object.click()  # 点开课程包
-                window_handles = driver.window_handles
-                driver.switch_to.window(window_handles[-1])
-                try:  # 点击开始学习
-                    driver.find_element_by_css_selector(
-                        "input#btnStartStudy").click()
-                    try:  # 点开学习是考试的情况，关闭页面,继续往下遍历未学习课程
-                        driver.find_element(By.ID, 'lblExamName')
-                        print('课程 %s 考试未完成,遍历下一课程...' % course_name)
-                        img_threading(img_shot, {driver: driver})
-                        driver.close()
-                        window_handles = driver.window_handles
-                        driver.switch_to.window(window_handles[-1])
-                        continue
-                    except NoSuchElementException:
-                        pass
-                except NoSuchElementException:  # 如没有二级页面则不用再次点击
-                    pass
-                learn_verification = True
-                print('开始学习: %s' % course_name)
-                return None  # 跳出遍历
-        if learn_verification is False:
-            driver.find_element(By.LINK_TEXT, '下一页').click()
-        if learn_verification is True:
-            break
+def go_test(driver):
+    """答题,全选A或者正确,慎用!"""
+    driver.find_element(By.ID, 'btnTest').click()
+    buttons_all = driver.find_elements(By.CSS_SELECTOR, 'label.btn-check.mb10')
+    for button in buttons_all:
+        if ('A' in button.text) or ('正确' in button.text):
+            button.click()
+    driver.find_element(By.ID, 'spn_submitText').click()
+    driver.find_element(By.ID, 'btnMyConfirm').click()
+    time.sleep(5)
 
 
 def auto_login(web_address, driver):
@@ -161,6 +125,60 @@ def auto_login(web_address, driver):
     return learn_time
 
 
+def LearnCourse(driver):
+    """从课程资源开始学习"""
+    open_windows = driver.window_handles  # 获取打开的多个窗口句柄
+    driver.switch_to.window(open_windows[-1])  # 切换到当前最新打开的窗口
+    driver.refresh()  # 刷新页面，防止循环学习时‘已完成’标签不刷新
+    time.sleep(1)  # 防止下面一句代码找不到elements
+    while True:
+        learn_courses = driver.find_elements(
+            By.CLASS_NAME, 'el-kng-bottom-detail')
+        for course in enumerate(learn_courses):
+            course_object = course[1]
+            course_name = course_object.text.split('\n')[0]
+            course_num = course[0]
+            Xpath_name = '//*[@id="SearchCatalog_Template_divTemplateHtmlContents"]/div/div[2]/div[3]/ul[2]/li[' + str(
+                course_num + 1) + ']/div[1]'
+            learn_state = course_object.find_element(By.XPATH, Xpath_name).text
+            learn_verification = False
+            if learn_state != '已完成':
+                Xpath_parent = Xpath_name + '/..'  # 父元素的Xpath
+                click_object = course_object.find_element(
+                    By.XPATH, Xpath_parent)
+                click_object.click()  # 点开课程包
+                window_handles = driver.window_handles
+                driver.switch_to.window(window_handles[-1])
+                try:  # 点击开始学习
+                    driver.find_element_by_css_selector(
+                        "input#btnStartStudy").click()
+                    try:  # 点开学习是考试的情况
+                        driver.find_element(By.ID, 'lblExamName')
+                        print('课程 %s 开始考试...' % course_name)
+                        go_test(driver)  # 自动点击A和正确
+                        print('课程 %s 考试完成!' % course_name)
+                        # img_threading(img_shot, {driver: driver})  # 弹出考试二维码
+                        driver.close()
+                        LearnCourse(driver)
+                    except NoSuchElementException:
+                        pass
+                except NoSuchElementException as e:  # 如没有二级页面则不用再次点击
+                    try:
+                        if driver.find_element(By.ID, 'lblStudySchedule').text == '100':
+                            LearnCourse(driver)
+                        else:
+                            raise e('没有正常进行学习,请检查程序!')
+                    except NoSuchElementException:
+                        pass
+                learn_verification = True
+                print('开始学习: %s' % course_name)
+                return None  # 跳出遍历
+        if learn_verification is False:
+            driver.find_element(By.LINK_TEXT, '下一页').click()
+        if learn_verification is True:
+            break
+
+
 def learn_continue(driver, start_time, learn_time):
     """设定学习时长检查继续学习弹窗并点击"""
     open_windows = driver.window_handles  # 获取打开的多个窗口句柄
@@ -184,8 +202,10 @@ def learn_continue(driver, start_time, learn_time):
         try:  # 判断是否跳转到考试页
             test_page = driver.find_element(By.ID, 'lblExamName')
             test_name = test_page.text
-            print('课程 %s 需要进行考试' % test_name)
-            img_threading(img_shot, {driver: driver})
+            print('课程 %s 开始考试...' % test_name)
+            go_test(driver)  # 自动选择A和正确
+            print('课程 %s 考试完成!' % test_name)
+            # img_threading(img_shot, {driver: driver})  # 弹出考试二维码
             break
         except NoSuchElementException:
             pass
@@ -226,7 +246,7 @@ if __name__ == '__main__':
     option = webdriver.ChromeOptions()
     option.add_argument("--window-size=1366,768")
     option.add_argument("--start-maximized")
-    option.add_argument('headless')  # 隐藏浏览器
+    # option.add_argument('headless')  # 隐藏浏览器
     option.add_argument("--mute-audio")  # 静音
     option.add_experimental_option(
         'excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息
