@@ -9,6 +9,7 @@ import traceback
 import time
 from datetime import datetime
 import pandas as pd
+from sqlalchemy import false
 import win32api
 import win32con
 from selenium import webdriver
@@ -74,6 +75,16 @@ def go_test(driver):
     time.sleep(5)
 
 
+def read_pass_test():
+    """某些课程答题不通过不显示完成,需要跳过答题"""
+    PassFileBool = os.path.exists('passfile.csv')
+    if PassFileBool is False:
+        PassEmpty = pd.DataFrame(columns=['课程名称', '答题网址'])
+        PassEmpty.to_excel('待答题课程名单.xlsx', index=False)
+    PassCourse = pd.read_excel('待答题课程名单.xlsx')
+    return PassCourse
+
+
 def auto_login(web_address, driver):
     """登录流程"""
     # 环境配置
@@ -127,6 +138,8 @@ def auto_login(web_address, driver):
 
 def LearnCourse(driver):
     """从课程资源开始学习"""
+    pass_data = read_pass_test()
+    pass_course = pass_data['课程名称'].to_list()
     open_windows = driver.window_handles  # 获取打开的多个窗口句柄
     driver.switch_to.window(open_windows[-1])  # 切换到当前最新打开的窗口
     driver.refresh()  # 刷新页面，防止循环学习时‘已完成’标签不刷新
@@ -142,7 +155,8 @@ def LearnCourse(driver):
                 course_num + 1) + ']/div[1]'
             learn_state = course_object.find_element(By.XPATH, Xpath_name).text
             learn_verification = False
-            if learn_state != '已完成':
+            # 状态不是已完成，并且不在跳过答题名单的课程进行学习
+            if (learn_state != '已完成') and (course_name not in pass_course):
                 Xpath_parent = Xpath_name + '/..'  # 父元素的Xpath
                 click_object = course_object.find_element(
                     By.XPATH, Xpath_parent)
@@ -154,6 +168,14 @@ def LearnCourse(driver):
                         "input#btnStartStudy").click()
                     try:  # 点开学习是考试的情况
                         driver.find_element(By.ID, 'lblExamName')
+                        # 如果答题次数超过1次，将课程名写入名单，循环跳过此课程
+                        test_times = driver.find_element(By.ID, 'lblExamTimes').text
+                        if test_times != (r'0/不限次数' or r'1/不限次数'):
+                            current_url = driver.current_url
+                            pass_data.loc[len(pass_data.index)] = [course_name, current_url]
+                            pass_data.to_excel('待答题课程名单.xlsx', index=False)
+                            print('%s答题次数超限,已跳过答题!' % course_name)
+                            LearnCourse(driver)
                         print('课程 %s 开始考试...' % course_name)
                         go_test(driver)  # 自动点击A和正确
                         print('课程 %s 考试完成!' % course_name)
