@@ -178,7 +178,7 @@ def LearnCourse(driver):
                             print('答题次数超限,已跳过答题!')
                             driver.close()
                             LearnCourse(driver)
-                            # 递归后跳出循环仍会继续前一次执行下面考试的操作，但是没有报错，可以删除excel测试
+                            return None
                         print('课程 %s 开始考试...' % course_name)
                         go_test(driver)  # 自动点击A和正确
                         print('课程 %s 考试完成!' % course_name)
@@ -188,12 +188,14 @@ def LearnCourse(driver):
                     except UnexpectedAlertPresentException:
                         driver.close()
                         LearnCourse(driver)
+                        return None
                     except NoSuchElementException:
                         pass
                 except NoSuchElementException as e:  # 如没有二级页面则不用再次点击
                     try:
                         if driver.find_element(By.ID, 'lblStudySchedule').text == '100':
                             LearnCourse(driver)
+                            return None
                         else:
                             raise e('没有正常进行学习,请检查程序!')
                     except NoSuchElementException:
@@ -276,7 +278,7 @@ if __name__ == '__main__':
     option = webdriver.ChromeOptions()
     option.add_argument("--window-size=1366,768")
     option.add_argument("--start-maximized")
-    option.add_argument('headless')  # 隐藏浏览器
+    # option.add_argument('headless')  # 隐藏浏览器
     option.add_argument("--mute-audio")  # 静音
     option.add_experimental_option(
         'excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息
