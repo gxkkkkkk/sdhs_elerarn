@@ -12,7 +12,7 @@ import pandas as pd
 import win32api
 import win32con
 from selenium import webdriver
-from selenium.common.exceptions import NoAlertPresentException, NoSuchElementException, ElementNotInteractableException
+from selenium.common.exceptions import NoAlertPresentException, NoSuchElementException, ElementNotInteractableException, ElementClickInterceptedException, UnexpectedAlertPresentException
 from selenium.webdriver.common.by import By
 import requests
 from PIL import Image
@@ -185,6 +185,9 @@ def LearnCourse(driver):
                         # img_threading(img_shot, {driver: driver})  # 弹出考试二维码
                         driver.close()
                         LearnCourse(driver)
+                    except UnexpectedAlertPresentException:
+                        driver.close()
+                        LearnCourse(driver)
                     except NoSuchElementException:
                         pass
                 except NoSuchElementException as e:  # 如没有二级页面则不用再次点击
@@ -196,7 +199,7 @@ def LearnCourse(driver):
                     except NoSuchElementException:
                         pass
                 learn_verification = True
-                print('开始学习: %s' % course_name)
+                print('开始学习: %s...' % course_name)
                 return None  # 跳出遍历
         if learn_verification is False:
             driver.find_element(By.LINK_TEXT, '下一页').click()
@@ -246,9 +249,11 @@ def learn_continue(driver, start_time, learn_time):
         try:  # 判断播放是否中断，出现加载对象
             refresh_element = driver.find_element(
                 By.CSS_SELECTOR, '.jw-icon.jw-icon-display.jw-button-color.jw-reset')
-            refresh_element.click()
+            driver.execute_script("arguments[0].click();", refresh_element)
         except ElementNotInteractableException:
             pass
+        except ElementClickInterceptedException as e:
+            raise e('未知错误!')
         except NoSuchElementException:
             pass
         time_now = datetime.now()
