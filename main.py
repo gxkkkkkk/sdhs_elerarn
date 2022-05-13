@@ -300,9 +300,11 @@ if __name__ == '__main__':
         # cut_screen(driver_name)  # 签到后截图
         currenttime = time.strftime('%m.%d %H:%M:%S', time.localtime())
         win32api.MessageBox(0, currenttime + "学习签到完成", "提醒", win32con.MB_OK)
+        print('学习完成,当前时间: %s' % datetime.now())
     except Exception as e:
         win32api.MessageBox(0, '遇到了一个错误,请重试!', "警告", win32con.MB_ICONWARNING)
         raise e('一个未知错误.')
     finally:
         driver_name.quit()
-        print('学习完成,当前时间: %s' % datetime.now())
+        print('程序内存已释放...')
+
