@@ -1,10 +1,11 @@
-#!/usr/bin/envpython3
+#!/usr/bin/evpython3
 # -*- coding: utf-8 -*-
 """规定编码"""
 # pylint: disable=C0103
 # pylint: disable=unused-variable, line-too-long, consider-using-enumerate
 import os
 import sys
+from tkinter import E
 import traceback
 import time
 from datetime import datetime
@@ -269,34 +270,39 @@ def learn_continue(driver, start_time, learn_time):
 
 
 if __name__ == '__main__':
-    # 获取当前程序目录的绝对路径和名称
-    work_path, work_name = os.path.split(os.path.abspath(sys.argv[0]))
-    # 更改当前工作目录
-    os.chdir(work_path)
-    # 更新浏览器驱动
-    ac.checkChromeDriverUpdate()
-    option = webdriver.ChromeOptions()
-    option.add_argument("--window-size=1366,768")
-    option.add_argument("--start-maximized")
-    # option.add_argument('headless')  # 隐藏浏览器
-    option.add_argument("--mute-audio")  # 静音
-    option.add_experimental_option(
-        'excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息
-    driver_name = webdriver.Chrome(chrome_options=option)  # 选择Chrome浏览器
-    # 登录课程资源网站
-    source_website = 'http://u.sdhsg.com/kng/knowledgecatalogsearch.htm?sf=UploadDate&s=ac&st=null&mode='
-    learn_time = auto_login(source_website, driver_name)
-    start_time = datetime.now()
-    print('开始学习,当前时间: %s' % start_time)
-    print('学习时长: %ds' % learn_time)
-    print('学习中...')
-    learning_time = 0
-    while learning_time < learn_time:
-        LearnCourse(driver_name)
-        learning_time = learn_continue(driver_name, start_time, learn_time)
-    sign_in(driver_name)
-    cut_screen(driver_name)
-    driver_name.quit()
-    print('学习完成,当前时间: %s' % datetime.now())
-    currenttime = time.strftime('%m.%d %H:%M:%S', time.localtime())
-    win32api.MessageBox(0, currenttime + "学习签到完成", "提醒", win32con.MB_OK)
+    try:
+        # 获取当前程序目录的绝对路径和名称
+        work_path, work_name = os.path.split(os.path.abspath(sys.argv[0]))
+        # 更改当前工作目录
+        os.chdir(work_path)
+        # 更新浏览器驱动
+        ac.checkChromeDriverUpdate()
+        option = webdriver.ChromeOptions()
+        option.add_argument("--window-size=1366,768")
+        option.add_argument("--start-maximized")
+        option.add_argument('headless')  # 隐藏浏览器
+        option.add_argument("--mute-audio")  # 静音
+        option.add_experimental_option(
+            'excludeSwitches', ['enable-logging'])  # 处理一个错误提示信息
+        driver_name = webdriver.Chrome(chrome_options=option)  # 选择Chrome浏览器
+        # 登录课程资源网站
+        source_website = 'http://u.sdhsg.com/kng/knowledgecatalogsearch.htm?sf=UploadDate&s=ac&st=null&mode='
+        learn_time = auto_login(source_website, driver_name)
+        start_time = datetime.now()
+        print('开始学习,当前时间: %s' % start_time)
+        print('学习时长: %ds' % learn_time)
+        print('学习中...')
+        learning_time = 0
+        while learning_time < learn_time:
+            LearnCourse(driver_name)
+            learning_time = learn_continue(driver_name, start_time, learn_time)
+        sign_in(driver_name)
+        # cut_screen(driver_name)  # 签到后截图
+        currenttime = time.strftime('%m.%d %H:%M:%S', time.localtime())
+        win32api.MessageBox(0, currenttime + "学习签到完成", "提醒", win32con.MB_OK)
+    except Exception as e:
+        win32api.MessageBox(0, '遇到了一个错误,请重试!', "警告", win32con.MB_ICONWARNING)
+        raise e('一个未知错误.')
+    finally:
+        driver_name.quit()
+        print('学习完成,当前时间: %s' % datetime.now())
