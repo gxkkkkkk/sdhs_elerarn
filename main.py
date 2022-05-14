@@ -302,7 +302,8 @@ if __name__ == '__main__':
         win32api.MessageBox(0, currenttime + "学习签到完成", "提醒", win32con.MB_OK)
         print('学习完成,当前时间: %s' % datetime.now())
     except Exception as e:
-        win32api.MessageBox(0, '遇到了一个错误,请重试!', "警告", win32con.MB_ICONWARNING)
+        cut_screen(driver_name)
+        win32api.MessageBox(0, '遇到了一个错误,已截图!', "警告", win32con.MB_ICONWARNING)
         raise e('一个未知错误.')
     finally:
         driver_name.quit()
