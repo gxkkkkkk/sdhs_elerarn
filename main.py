@@ -303,7 +303,7 @@ if __name__ == '__main__':
         print('学习完成,当前时间: %s' % datetime.now())
     except Exception as e:
         cut_screen(driver_name)
-        win32api.MessageBox(0, '遇到了一个错误,已截图!', "警告", win32con.MB_ICONWARNING)
+        win32api.MessageBox(0, '学习时长:%fh\n遇到一个错误,已截图!' % learning_time/3600, "警告", win32con.MB_ICONWARNING)
         raise e('一个未知错误.')
     finally:
         driver_name.quit()
